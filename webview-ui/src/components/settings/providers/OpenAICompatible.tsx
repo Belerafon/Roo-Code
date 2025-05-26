@@ -590,6 +590,25 @@ export const OpenAICompatible = ({ apiConfiguration, setApiConfigurationField }:
 					{t("settings:providers.customModel.resetDefaults")}
 				</Button>
 			</div>
+			<VSCodeTextField
+				value={
+					typeof apiConfiguration?.openAiApiTimeout === "number"
+						? String(apiConfiguration.openAiApiTimeout)
+						: (apiConfiguration?.openAiApiTimeout ?? "")
+				}
+				onInput={handleInputChange("openAiApiTimeout", (e) => {
+					const value = (e.target as HTMLInputElement).value
+					return value === "" ? undefined : Number(value)
+				})}
+				placeholder="10"
+				type="text"
+				inputMode="numeric"
+				className="w-full mt-4">
+				<label className="block font-medium mb-1">{t("settings:providers.openAiApiTimeout")}</label>
+			</VSCodeTextField>
+			<div className="text-sm text-vscode-descriptionForeground -mt-2">
+				{t("settings:providers.openAiApiTimeoutDescription")}
+			</div>
 		</>
 	)
 }

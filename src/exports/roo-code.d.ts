@@ -333,8 +333,12 @@ type ProviderSettings = {
 				[x: string]: string
 		  }
 		| undefined
+	/** Timeout in milliseconds for OpenAI API requests */
+	openAiApiTimeout?: number | undefined
 	ollamaModelId?: string | undefined
 	ollamaBaseUrl?: string | undefined
+	/** Timeout in minutes for Ollama API requests */
+	ollamaApiTimeout?: number | undefined
 	vsCodeLmModelSelector?:
 		| {
 				vendor?: string | undefined
@@ -347,6 +351,8 @@ type ProviderSettings = {
 	lmStudioBaseUrl?: string | undefined
 	lmStudioDraftModelId?: string | undefined
 	lmStudioSpeculativeDecodingEnabled?: boolean | undefined
+	/** Timeout in minutes for LMStudio API requests */
+	lmStudioApiTimeout?: number | undefined
 	geminiApiKey?: string | undefined
 	googleGeminiBaseUrl?: string | undefined
 	openAiNativeApiKey?: string | undefined

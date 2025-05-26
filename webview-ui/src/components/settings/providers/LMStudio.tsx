@@ -64,6 +64,25 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 				className="w-full">
 				<label className="block font-medium mb-1">{t("settings:providers.lmStudio.modelId")}</label>
 			</VSCodeTextField>
+			<VSCodeTextField
+				value={
+					typeof apiConfiguration?.lmStudioApiTimeout === "number"
+						? String(apiConfiguration.lmStudioApiTimeout)
+						: (apiConfiguration?.lmStudioApiTimeout ?? "")
+				}
+				onInput={handleInputChange("lmStudioApiTimeout", (e) => {
+					const value = (e.target as HTMLInputElement).value
+					return value === "" ? undefined : Number(value)
+				})}
+				placeholder="10"
+				type="text"
+				inputMode="numeric"
+				className="w-full mt-4">
+				<label className="block font-medium mb-1">{t("settings:providers.openAiApiTimeout")}</label>
+			</VSCodeTextField>
+			<div className="text-sm text-vscode-descriptionForeground -mt-2 mb-2">
+				{t("settings:providers.openAiApiTimeoutDescription")}
+			</div>
 			{lmStudioModels.length > 0 && (
 				<VSCodeRadioGroup
 					value={

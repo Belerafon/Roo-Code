@@ -530,11 +530,13 @@ const openAiSchema = baseProviderSettingsSchema.extend({
 	openAiStreamingEnabled: z.boolean().optional(),
 	openAiHostHeader: z.string().optional(), // Keep temporarily for backward compatibility during migration.
 	openAiHeaders: z.record(z.string(), z.string()).optional(),
+	openAiApiTimeout: z.number().optional().describe("Timeout in milliseconds for OpenAI API requests"),
 })
 
 const ollamaSchema = baseProviderSettingsSchema.extend({
 	ollamaModelId: z.string().optional(),
 	ollamaBaseUrl: z.string().optional(),
+	ollamaApiTimeout: z.number().optional().describe("Timeout in minutes for Ollama API requests"),
 })
 
 const vsCodeLmSchema = baseProviderSettingsSchema.extend({
@@ -553,6 +555,7 @@ const lmStudioSchema = baseProviderSettingsSchema.extend({
 	lmStudioBaseUrl: z.string().optional(),
 	lmStudioDraftModelId: z.string().optional(),
 	lmStudioSpeculativeDecodingEnabled: z.boolean().optional(),
+	lmStudioApiTimeout: z.number().optional().describe("Timeout in minutes for LMStudio API requests"),
 })
 
 const geminiSchema = apiModelIdProviderModelSchema.extend({
@@ -711,15 +714,18 @@ const providerSettingsRecord: ProviderSettingsRecord = {
 	openAiStreamingEnabled: undefined,
 	openAiHostHeader: undefined, // Keep temporarily for backward compatibility during migration
 	openAiHeaders: undefined,
+	openAiApiTimeout: undefined,
 	// Ollama
 	ollamaModelId: undefined,
 	ollamaBaseUrl: undefined,
+	ollamaApiTimeout: undefined,
 	// VS Code LM
 	vsCodeLmModelSelector: undefined,
 	lmStudioModelId: undefined,
 	lmStudioBaseUrl: undefined,
 	lmStudioDraftModelId: undefined,
 	lmStudioSpeculativeDecodingEnabled: undefined,
+	lmStudioApiTimeout: undefined,
 	// Gemini
 	geminiApiKey: undefined,
 	googleGeminiBaseUrl: undefined,
