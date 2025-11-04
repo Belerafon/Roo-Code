@@ -1,5 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI, { AzureOpenAI } from "openai"
+import { Agent, type Dispatcher } from "undici"
 import axios from "axios"
 
 import {
@@ -33,6 +34,26 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 	protected options: ApiHandlerOptions
 	private client: OpenAI
 	private readonly providerName = "OpenAI"
+	private static dispatcherCache = new Map<number, Dispatcher>()
+
+	private static getTimeoutConfig(timeout: number) {
+		const cacheKey = timeout > 0 ? timeout : 0
+		let dispatcher = this.dispatcherCache.get(cacheKey)
+		if (!dispatcher) {
+			const undiciTimeout = cacheKey === 0 ? 0 : cacheKey
+			dispatcher = new Agent({
+				headersTimeout: undiciTimeout,
+				bodyTimeout: undiciTimeout,
+				connectTimeout: undiciTimeout,
+			})
+			this.dispatcherCache.set(cacheKey, dispatcher)
+		}
+
+		return {
+			timeout,
+			fetchOptions: { dispatcher },
+		}
+	}
 
 	constructor(options: ApiHandlerOptions) {
 		super()
@@ -50,6 +71,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		}
 
 		const timeout = getApiRequestTimeout()
+		const timeoutConfig = OpenAiHandler.getTimeoutConfig(timeout)
 
 		if (isAzureAiInference) {
 			// Azure AI Inference Service (e.g., for DeepSeek) uses a different path structure
@@ -58,7 +80,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				defaultHeaders: headers,
 				defaultQuery: { "api-version": this.options.azureApiVersion || "2024-05-01-preview" },
-				timeout,
+				timeout: timeoutConfig.timeout,
+				fetchOptions: timeoutConfig.fetchOptions,
 			})
 		} else if (isAzureOpenAi) {
 			// Azure API shape slightly differs from the core API shape:
@@ -68,14 +91,16 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				apiVersion: this.options.azureApiVersion || azureOpenAiDefaultApiVersion,
 				defaultHeaders: headers,
-				timeout,
+				timeout: timeoutConfig.timeout,
+				fetchOptions: timeoutConfig.fetchOptions,
 			})
 		} else {
 			this.client = new OpenAI({
 				baseURL,
 				apiKey,
 				defaultHeaders: headers,
-				timeout,
+				timeout: timeoutConfig.timeout,
+				fetchOptions: timeoutConfig.fetchOptions,
 			})
 		}
 	}

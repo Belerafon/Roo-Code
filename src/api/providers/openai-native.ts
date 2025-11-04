@@ -1,5 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
+import { Agent, type Dispatcher } from "undici"
 
 import {
 	type ModelInfo,
@@ -23,6 +24,7 @@ import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import { getApiRequestTimeout } from "./utils/timeout-config"
 
 export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler["getModel"]>
 
@@ -30,6 +32,27 @@ export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler["getModel"]>
 
 // Constants for model identification
 const GPT5_MODEL_PREFIX = "gpt-5"
+
+const dispatcherCache = new Map<number, Dispatcher>()
+
+function getTimeoutConfig(timeout: number) {
+	const cacheKey = timeout > 0 ? timeout : 0
+	let dispatcher = dispatcherCache.get(cacheKey)
+	if (!dispatcher) {
+		const undiciTimeout = cacheKey === 0 ? 0 : cacheKey
+		dispatcher = new Agent({
+			headersTimeout: undiciTimeout,
+			bodyTimeout: undiciTimeout,
+			connectTimeout: undiciTimeout,
+		})
+		dispatcherCache.set(cacheKey, dispatcher)
+	}
+
+	return {
+		timeout,
+		fetchOptions: { dispatcher },
+	}
+}
 
 export class OpenAiNativeHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
@@ -62,7 +85,14 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 			this.options.enableGpt5ReasoningSummary = true
 		}
 		const apiKey = this.options.openAiNativeApiKey ?? "not-provided"
-		this.client = new OpenAI({ baseURL: this.options.openAiNativeBaseUrl, apiKey })
+		const timeout = getApiRequestTimeout()
+		const timeoutConfig = getTimeoutConfig(timeout)
+		this.client = new OpenAI({
+			baseURL: this.options.openAiNativeBaseUrl,
+			apiKey,
+			timeout: timeoutConfig.timeout,
+			fetchOptions: timeoutConfig.fetchOptions,
+		})
 	}
 
 	private normalizeUsage(usage: any, model: OpenAiNativeModel): ApiStreamUsageChunk | undefined {

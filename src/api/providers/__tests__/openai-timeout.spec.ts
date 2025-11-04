@@ -62,6 +62,7 @@ describe("OpenAiHandler timeout configuration", () => {
 				baseURL: "https://api.openai.com/v1",
 				apiKey: "test-key",
 				timeout: 600000, // 600 seconds in milliseconds
+				fetchOptions: expect.objectContaining({ dispatcher: expect.any(Object) }),
 			}),
 		)
 	})
@@ -82,6 +83,7 @@ describe("OpenAiHandler timeout configuration", () => {
 			expect.objectContaining({
 				baseURL: "http://localhost:8080/v1",
 				timeout: 1800000, // 1800 seconds in milliseconds
+				fetchOptions: expect.objectContaining({ dispatcher: expect.any(Object) }),
 			}),
 		)
 	})
@@ -102,6 +104,7 @@ describe("OpenAiHandler timeout configuration", () => {
 		expect(mockAzureOpenAIConstructor).toHaveBeenCalledWith(
 			expect.objectContaining({
 				timeout: 900000, // 900 seconds in milliseconds
+				fetchOptions: expect.objectContaining({ dispatcher: expect.any(Object) }),
 			}),
 		)
 	})
@@ -121,6 +124,7 @@ describe("OpenAiHandler timeout configuration", () => {
 		expect(mockOpenAIConstructor).toHaveBeenCalledWith(
 			expect.objectContaining({
 				timeout: 1200000, // 1200 seconds in milliseconds
+				fetchOptions: expect.objectContaining({ dispatcher: expect.any(Object) }),
 			}),
 		)
 	})
@@ -138,6 +142,7 @@ describe("OpenAiHandler timeout configuration", () => {
 		expect(mockOpenAIConstructor).toHaveBeenCalledWith(
 			expect.objectContaining({
 				timeout: 0, // No timeout
+				fetchOptions: expect.objectContaining({ dispatcher: expect.any(Object) }),
 			}),
 		)
 	})
