@@ -82,7 +82,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				defaultHeaders: headers,
 				defaultQuery: { "api-version": this.options.azureApiVersion || "2024-05-01-preview" },
 				timeout,
-				fetchOptions: { dispatcher },
 				fetch: fetchWithDispatcher as any,
 			})
 		} else if (isAzureOpenAi) {
@@ -94,7 +93,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiVersion: this.options.azureApiVersion || azureOpenAiDefaultApiVersion,
 				defaultHeaders: headers,
 				timeout,
-				fetchOptions: { dispatcher },
 				fetch: fetchWithDispatcher as any,
 			})
 		} else {
@@ -103,7 +101,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				defaultHeaders: headers,
 				timeout,
-				fetchOptions: { dispatcher },
 				fetch: fetchWithDispatcher as any,
 			})
 		}
