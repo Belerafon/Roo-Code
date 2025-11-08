@@ -1,6 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI, { AzureOpenAI } from "openai"
 import axios from "axios"
+import { fetch as undiciFetch, Agent } from "undici"
 
 import {
 	type ModelInfo,
@@ -25,6 +26,7 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
+import { buildLlmDispatcher } from "./build-llm-dispatcher"
 
 // TODO: Rename this to OpenAICompatibleHandler. Also, I think the
 // `OpenAINativeHandler` can subclass from this, since it's obviously
@@ -33,6 +35,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 	protected options: ApiHandlerOptions
 	private client: OpenAI
 	private readonly providerName = "OpenAI"
+	private readonly timeout: number
+	private defaultDispatcher: any
 
 	constructor(options: ApiHandlerOptions) {
 		super()
@@ -50,6 +54,14 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		}
 
 		const timeout = getApiRequestTimeout()
+		this.timeout = timeout
+		this.defaultDispatcher = buildLlmDispatcher(timeout)
+
+		// Minimal fetch wrapper to ensure our dispatcher is used even if SDK spawns its own fetch
+		const fetchWithDispatcher: typeof fetch = ((input: any, init?: any) => {
+			const mergedInit = { ...(init || {}), dispatcher: (init as any)?.dispatcher ?? this.defaultDispatcher }
+			return undiciFetch(input as any, mergedInit as any)
+		}) as any
 
 		if (isAzureAiInference) {
 			// Azure AI Inference Service (e.g., for DeepSeek) uses a different path structure
@@ -76,6 +88,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				defaultHeaders: headers,
 				timeout,
+				fetch: fetchWithDispatcher as any,
 			})
 		}
 	}
