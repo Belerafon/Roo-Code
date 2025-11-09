@@ -1,0 +1,62 @@
+# .github/workflows/build-vsix.yml
+name: Build VSIX on main
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build sources
+        run: pnpm -s build || echo "no build step"
+
+      - name: Package VSIX
+        run: |
+          set -e
+          # Try your existing "pnpm vsix"; fall back to vsce if missing.
+          if pnpm -s vsix; then
+            echo "Packaged via pnpm vsix"
+          else
+            npm i -g @vscode/vsce
+            vsce package --no-yarn --out ./extension.vsix
+          fi
+
+      - name: Find VSIX
+        id: vsix
+        run: |
+          set -e
+          FILE=$(ls -1 *.vsix dist/*.vsix out/*.vsix bin/*.vsix 2>/dev/null | head -n1 || true)
+          if [ -z "$FILE" ]; then
+            echo "VSIX not found"; exit 1;
+          fi
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-main-${{ github.run_number }}
+          path: ${{ steps.vsix.outputs.file }}
+          if-no-files-found: error
