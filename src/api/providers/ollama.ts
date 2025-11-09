@@ -1,5 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
+import { fetch as undiciFetch, Agent, type Dispatcher } from "undici"
 
 import { type ModelInfo, openAiModelInfoSaneDefaults, DEEP_SEEK_DEFAULT_TEMPERATURE } from "@roo-code/types"
 
@@ -15,6 +16,13 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
+
+function buildLlmDispatcher(timeoutMs: number): Dispatcher {
+    return new Agent({
+        headersTimeout: timeoutMs + 10_000,
+        bodyTimeout: timeoutMs + 10_000
+    })
+}
 
 type CompletionUsage = OpenAI.Chat.Completions.ChatCompletionChunk["usage"]
 
@@ -36,11 +44,16 @@ export class OllamaHandler extends BaseProvider implements SingleCompletionHandl
 			headers["Authorization"] = `Bearer ${this.options.ollamaApiKey}`
 		}
 
+		const timeout = getApiRequestTimeout()
+		const dispatcher = buildLlmDispatcher(timeout)
+
 		this.client = new OpenAI({
 			baseURL: (this.options.ollamaBaseUrl || "http://localhost:11434") + "/v1",
 			apiKey: apiKey,
-			timeout: getApiRequestTimeout(),
+			timeout,
 			defaultHeaders: headers,
+			fetch: undiciFetch as any,
+			fetchOptions: { dispatcher },
 		})
 	}
 

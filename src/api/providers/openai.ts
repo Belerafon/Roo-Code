@@ -1,6 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI, { AzureOpenAI } from "openai"
 import axios from "axios"
+import { fetch as undiciFetch, Agent, type Dispatcher } from "undici"
 
 import {
 	type ModelInfo,
@@ -29,6 +30,13 @@ import { handleOpenAIError } from "./utils/openai-error-handler"
 // TODO: Rename this to OpenAICompatibleHandler. Also, I think the
 // `OpenAINativeHandler` can subclass from this, since it's obviously
 // compatible with the OpenAI API. We can also rename it to `OpenAIHandler`.
+function buildLlmDispatcher(timeoutMs: number): Dispatcher {
+	return new Agent({
+		headersTimeout: timeoutMs + 10_000,
+		bodyTimeout: timeoutMs + 10_000
+	})
+}
+
 export class OpenAiHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
 	private client: OpenAI
@@ -50,6 +58,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		}
 
 		const timeout = getApiRequestTimeout()
+		const dispatcher = buildLlmDispatcher(timeout)
 
 		if (isAzureAiInference) {
 			// Azure AI Inference Service (e.g., for DeepSeek) uses a different path structure
@@ -76,6 +85,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				defaultHeaders: headers,
 				timeout,
+				fetch: undiciFetch as any,
+				fetchOptions: { dispatcher },
 			})
 		}
 	}
