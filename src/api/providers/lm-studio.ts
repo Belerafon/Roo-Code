@@ -1,5 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
+import { fetch as undiciFetch, Agent, type Dispatcher } from "undici"
 import axios from "axios"
 
 import { type ModelInfo, openAiModelInfoSaneDefaults, LMSTUDIO_DEFAULT_TEMPERATURE } from "@roo-code/types"
@@ -17,6 +18,13 @@ import { getModels, getModelsFromCache } from "./fetchers/modelCache"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 
+function buildLlmDispatcher(timeoutMs: number): Dispatcher {
+    return new Agent({
+        headersTimeout: timeoutMs + 10_000,
+        bodyTimeout: timeoutMs + 10_000
+    })
+}
+
 export class LmStudioHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
 	private client: OpenAI
@@ -29,10 +37,15 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 		// LM Studio uses "noop" as a placeholder API key
 		const apiKey = "noop"
 
+		const timeout = getApiRequestTimeout()
+		const dispatcher = buildLlmDispatcher(timeout)
+
 		this.client = new OpenAI({
 			baseURL: (this.options.lmStudioBaseUrl || "http://localhost:1234") + "/v1",
 			apiKey: apiKey,
-			timeout: getApiRequestTimeout(),
+			timeout,
+			fetch: undiciFetch as any,
+			fetchOptions: { dispatcher },
 		})
 	}
 
